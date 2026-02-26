@@ -85,6 +85,7 @@
         
             // 144 = Note On
             if (command === 144 && velocity > 0) {
+                document.getElementById("status").innerText = "Nyers MIDI kód: " + note;
                 // A JAVÍTOTT HÍVÁS: midiToKey-t használunk
                 const noteData = midiToKey(note); 
                 
