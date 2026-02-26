@@ -82,12 +82,17 @@
             const command = message.data[0];
             const note = message.data[1];
             const velocity = (message.data.length > 2) ? message.data[2] : 0;
-
-            // 144 = Note On (leütés), velocity > 0
+        
+            // 144 = Note On
             if (command === 144 && velocity > 0) {
-                const noteKey = midiToNoteKey(note);
-                document.getElementById("note-name").innerText = noteKey.replace("/", "").toUpperCase();
-                drawNote(noteKey);
+                // A JAVÍTOTT HÍVÁS: midiToKey-t használunk
+                const noteData = midiToKey(note); 
+                
+                // A display értéket írjuk ki (pl. C4)
+                document.getElementById("note-name").innerText = noteData.display;
+                
+                // A vexKey értéket küldjük a rajzolónak (pl. c/4)
+                drawNote(noteData.vexKey);
             }
         }
 
