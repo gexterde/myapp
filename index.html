@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Zongora MIDI Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        #canvas-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        #status { margin-top: 10px; color: #666; }
+        #note-name { font-size: 3rem; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>MIDI Kottázó</h1>
+    <div id="status">Várakozás MIDI eszközre...</div>
+    <div id="note-name">-</div>
+    <div id="canvas-container"></div>
+
+    <script>
+        const { Renderer, Stave, StaveNote, Voice, Formatter } = Vex.Flow;
+        const container = document.getElementById("canvas-container");
+        
+        // Kottarajzoló függvény
+        function drawNote(noteKey) {
+            container.innerHTML = ""; // Előző törlése
+            const renderer = new Renderer(container, Renderer.Backends.SVG);
+            renderer.resize(200, 200);
+            const context = renderer.getContext();
+            const stave = new Stave(10, 40, 150);
+            stave.addClef("treble").setContext(context).draw();
+
+            // Ha van leütött hang, megjelenítjük
+            if (noteKey) {
+                const notes = [
+                    new StaveNote({ keys: [noteKey], duration: "q" })
+                ];
+                Formatter.FormatAndDraw(context, stave, notes);
+            }
+        }
+
+        // MIDI kód átalakítása VexFlow formátumra (pl. 60 -> "c/4")
+        function midiToNoteKey(midi) {
+            const names = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
+            const noteName = names[midi % 12];
+            const octave = Math.floor(midi / 12) - 1;
+            return `${noteName}/${octave}`;
+        }
+
+        // Web MIDI API inicializálása
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+        } else {
+            document.getElementById("status").innerText = "A böngésződ nem támogatja a MIDI-t.";
+        }
+
+        function onMIDISuccess(midiAccess) {
+            document.getElementById("status").innerText = "MIDI kész! Üss le egy billentyűt a Roland-on.";
+            for (var input of midiAccess.inputs.values()) {
+                input.onmidimessage = getMIDIMessage;
+            }
+        }
+
+        function onMIDIFailure() {
+            document.getElementById("status").innerText = "Nem sikerült kapcsolódni a MIDI-hez.";
+        }
+
+        function getMIDIMessage(message) {
+            const command = message.data[0];
+            const note = message.data[1];
+            const velocity = (message.data.length > 2) ? message.data[2] : 0;
+
+            // 144 = Note On (leütés), velocity > 0
+            if (command === 144 && velocity > 0) {
+                const noteKey = midiToNoteKey(note);
+                document.getElementById("note-name").innerText = noteKey.replace("/", "").toUpperCase();
+                drawNote(noteKey);
+            }
+        }
+
+        // Alap kottakeret rajzolása
+        drawNote(null);
+    </script>
+</body>
+</html>
