@@ -41,11 +41,23 @@
         }
 
         // MIDI kód átalakítása VexFlow formátumra (pl. 60 -> "c/4")
-        function midiToNoteKey(midi) {
-            const names = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
-            const noteName = names[midi % 12];
-            const octave = Math.floor(midi / 12) - 1;
-            return `${noteName}/${octave}`;
+      function midiToKey(midi) {
+            // Magyar elnevezések: a 10-es index a B (angol Bb), a 11-es a H (angol B)
+            const names = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "b", "h"];
+            
+            let nameIndex = midi % 12;
+            let name = names[nameIndex];
+            
+            // A VexFlow (a kottarajzoló) angolul ért, 
+            // ezért neki a rajzoláshoz továbbra is 'b'-t kell küldenünk 'h' helyett!
+            let vexFlowName = (name === "h") ? "b" : (name === "b" ? "bb" : name);
+            
+            let octave = Math.floor(midi / 12) - 1;
+            
+            return {
+                display: name.toUpperCase() + octave, // Amit kiírunk a kijelzőre (pl. H4)
+                vexKey: vexFlowName + "/" + octave    // Amit a kottarajzolónak adunk (pl. b/4)
+            };
         }
 
         // Web MIDI API inicializálása
